@@ -34,7 +34,14 @@ type VirtualMemoryStat struct {
 	//
 	// This value is computed from the kernel specific values.
 	UsedPercent float64 `json:"usedPercent"`
-
+  
+  // extended
+  TotalPageFile uint64 `json:"totalPageFile"`
+  AvailPageFile uint64 `json:"availPageFile"`
+  TotalVirtual uint64 `json:"totalVirtual"`
+  TotalAvailVirtual uint64 `json:"totalAvailVirtual"`
+  AvailExtendedVirtual uint64 `json:"availExtendedVirtual"`
+  
 	// This is the kernel's notion of free memory; RAM chips whose bits nobody
 	// cares about the value of right now. For a human consumable number,
 	// Available is what you really want.
