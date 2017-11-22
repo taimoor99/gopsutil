@@ -17,7 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/shirou/gopsutil/internal/common"
+	"github.com/taimoor99/gopsutil/internal/common"
 )
 
 type LSB struct {

@@ -12,9 +12,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/internal/common"
-	"github.com/shirou/gopsutil/net"
+	"github.com/taimoor99/gopsutil/cpu"
+	"github.com/taimoor99/gopsutil/internal/common"
+	"github.com/taimoor99/gopsutil/net"
 	"golang.org/x/sys/unix"
 )
 

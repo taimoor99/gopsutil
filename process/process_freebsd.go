@@ -7,9 +7,9 @@ import (
 	"encoding/binary"
 	"strings"
 
-	cpu "github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/internal/common"
-	net "github.com/shirou/gopsutil/net"
+	cpu "github.com/taimoor99/gopsutil/cpu"
+	"github.com/taimoor99/gopsutil/internal/common"
+	net "github.com/taimoor99/gopsutil/net"
 	"golang.org/x/sys/unix"
 )
 

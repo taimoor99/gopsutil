@@ -1,9 +1,9 @@
 package mem
 
 import (
-	"encoding/json"
+"encoding/json"
 
-	"github.com/shirou/gopsutil/internal/common"
+"github.com/taimoor99/gopsutil/internal/common"
 )
 
 var invoke common.Invoker
@@ -45,26 +45,26 @@ type VirtualMemoryStat struct {
 	// This is the kernel's notion of free memory; RAM chips whose bits nobody
 	// cares about the value of right now. For a human consumable number,
 	// Available is what you really want.
-	Free uint64 `json:"free"`
+  Free uint64 `json:"free"`
 
 	// OS X / BSD specific numbers:
 	// http://www.macyourself.com/2010/02/17/what-is-free-wired-active-and-inactive-system-memory-ram/
-	Active   uint64 `json:"active"`
-	Inactive uint64 `json:"inactive"`
-	Wired    uint64 `json:"wired"`
+  Active   uint64 `json:"active"`
+  Inactive uint64 `json:"inactive"`
+  Wired    uint64 `json:"wired"`
 
 	// Linux specific numbers
 	// https://www.centos.org/docs/5/html/5.1/Deployment_Guide/s2-proc-meminfo.html
 	// https://www.kernel.org/doc/Documentation/filesystems/proc.txt
-	Buffers      uint64 `json:"buffers"`
-	Cached       uint64 `json:"cached"`
-	Writeback    uint64 `json:"writeback"`
-	Dirty        uint64 `json:"dirty"`
-	WritebackTmp uint64 `json:"writebacktmp"`
-	Shared       uint64 `json:"shared"`
-	Slab         uint64 `json:"slab"`
-	PageTables   uint64 `json:"pagetables"`
-	SwapCached   uint64 `json:"swapcached"`
+  Buffers      uint64 `json:"buffers"`
+  Cached       uint64 `json:"cached"`
+  Writeback    uint64 `json:"writeback"`
+  Dirty        uint64 `json:"dirty"`
+  WritebackTmp uint64 `json:"writebacktmp"`
+  Shared       uint64 `json:"shared"`
+  Slab         uint64 `json:"slab"`
+  PageTables   uint64 `json:"pagetables"`
+  SwapCached   uint64 `json:"swapcached"`
 }
 
 type SwapMemoryStat struct {

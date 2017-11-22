@@ -7,7 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/shirou/gopsutil/internal/common"
+	"github.com/taimoor99/gopsutil/internal/common"
 	"os/exec"
 )
 
