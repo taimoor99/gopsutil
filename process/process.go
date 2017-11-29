@@ -18,18 +18,18 @@ func init() {
 
 type Process struct {
 	Pid            int32 `json:"pid"`
-	name           string
-	status         string
-	parent         int32
-	numCtxSwitches *NumCtxSwitchesStat
-	uids           []int32
-	gids           []int32
-	numThreads     int32
-	memInfo        *MemoryInfoStat
-	sigInfo        *SignalInfoStat
-
-	lastCPUTimes *cpu.TimesStat
-	lastCPUTime  time.Time
+	Pname           string
+	Pstatus         string
+	Pparent         int32
+	PnumCtxSwitches *NumCtxSwitchesStat
+	Puids           []int32
+	Pgids           []int32
+	PnumThreads     int32
+	PmemInfo        *MemoryInfoStat
+	PsigInfo        *SignalInfoStat
+	PIOCountersStat *IOCountersStat
+	PlastCPUTimes *cpu.TimesStat
+	PlastCPUTime  time.Time
 }
 
 type OpenFilesStat struct {
@@ -149,8 +149,8 @@ func (p *Process) Percent(interval time.Duration) (float64, error) {
 	now := time.Now()
 
 	if interval > 0 {
-		p.lastCPUTimes = cpuTimes
-		p.lastCPUTime = now
+		p.PlastCPUTimes = cpuTimes
+		p.PlastCPUTime = now
 		time.Sleep(interval)
 		cpuTimes, err = p.Times()
 		now = time.Now()
@@ -158,19 +158,19 @@ func (p *Process) Percent(interval time.Duration) (float64, error) {
 			return 0, err
 		}
 	} else {
-		if p.lastCPUTimes == nil {
+		if p.PlastCPUTimes == nil {
 			// invoked first time
-			p.lastCPUTimes = cpuTimes
-			p.lastCPUTime = now
+			p.PlastCPUTimes = cpuTimes
+			p.PlastCPUTime = now
 			return 0, nil
 		}
 	}
 
 	numcpu := runtime.NumCPU()
-	delta := (now.Sub(p.lastCPUTime).Seconds()) * float64(numcpu)
-	ret := calculatePercent(p.lastCPUTimes, cpuTimes, delta, numcpu)
-	p.lastCPUTimes = cpuTimes
-	p.lastCPUTime = now
+	delta := (now.Sub(p.PlastCPUTime).Seconds()) * float64(numcpu)
+	ret := calculatePercent(p.PlastCPUTimes, cpuTimes, delta, numcpu)
+	p.PlastCPUTimes = cpuTimes
+	p.PlastCPUTime = now
 	return ret, nil
 }
 

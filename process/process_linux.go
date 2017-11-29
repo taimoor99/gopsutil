@@ -73,8 +73,31 @@ func (m MemoryMapsStat) String() string {
 // to get more information about the process. An error will be returned
 // if the process does not exist.
 func NewProcess(pid int32) (*Process, error) {
+	r:= Process{Pid:pid}
+	pname,_ :=r.Name()
+	pstatus,_ := r.Status()
+	// pparent, _ := r.Parent()
+
+	pnumCtxSwitches, _ := r.NumCtxSwitches()
+	puid, _ := r.Uids()
+	pgids,_ := r.Gids()
+	// pnumthreads, _ := r.Threads()
+
+	pIOCountersStat, _ := r.IOCounters()
+	pmemInfo, _ := r.MemoryInfo()
+	plastcputime, _ := r.Times()
 	p := &Process{
 		Pid: int32(pid),
+		Pname: pname,
+		Pstatus: pstatus,
+		// Pparent: pparent,
+		PnumCtxSwitches: pnumCtxSwitches,
+		Puids: puid,
+		Pgids: pgids,
+		// PnumThreads: pnumthreads,
+		PIOCountersStat: pIOCountersStat,
+		PmemInfo: pmemInfo,
+		PlastCPUTimes: plastcputime,
 	}
 	file, err := os.Open(common.HostProc(strconv.Itoa(int(p.Pid))))
 	defer file.Close()
