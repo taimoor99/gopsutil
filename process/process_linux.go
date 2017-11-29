@@ -73,8 +73,31 @@ func (m MemoryMapsStat) String() string {
 // to get more information about the process. An error will be returned
 // if the process does not exist.
 func NewProcess(pid int32) (*Process, error) {
+	r:= Process{Pid:pid}
+	pname,_ :=r.Name()
+	pstatus,_ := r.Status()
+	// pparent, _ := r.Parent()
+
+	pnumCtxSwitches, _ := r.NumCtxSwitches()
+	puid, _ := r.Uids()
+	pgids,_ := r.Gids()
+	// pnumthreads, _ := r.Threads()
+
+	pIOCountersStat, _ := r.IOCounters()
+	pmemInfo, _ := r.MemoryInfo()
+	plastcputime, _ := r.Times()
 	p := &Process{
 		Pid: int32(pid),
+		Pname: pname,
+		Pstatus: pstatus,
+		// Pparent: pparent,
+		PnumCtxSwitches: pnumCtxSwitches,
+		Puids: puid,
+		Pgids: pgids,
+		// PnumThreads: pnumthreads,
+		PIOCountersStat: pIOCountersStat,
+		PmemInfo: pmemInfo,
+		PlastCPUTimes: plastcputime,
 	}
 	file, err := os.Open(common.HostProc(strconv.Itoa(int(p.Pid))))
 	defer file.Close()
@@ -90,14 +113,14 @@ func (p *Process) Ppid() (int32, error) {
 	return ppid, nil
 }
 
-// Name returns name of the process.
+// Name returns Pname of the process.
 func (p *Process) Name() (string, error) {
-	if p.name == "" {
+	if p.Pname == "" {
 		if err := p.fillFromStatus(); err != nil {
 			return "", err
 		}
 	}
-	return p.name, nil
+	return p.Pname, nil
 }
 
 // Exe returns executable path of the process.
@@ -137,10 +160,10 @@ func (p *Process) Parent() (*Process, error) {
 	if err != nil {
 		return nil, err
 	}
-	if p.parent == 0 {
+	if p.Pparent == 0 {
 		return nil, fmt.Errorf("wrong number of parents")
 	}
-	return NewProcess(p.parent)
+	return NewProcess(p.Pparent)
 }
 
 // Status returns the process status.
@@ -153,7 +176,7 @@ func (p *Process) Status() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return p.status, nil
+	return p.Pstatus, nil
 }
 
 // Uids returns user ids of the process as a slice of the int
@@ -162,7 +185,7 @@ func (p *Process) Uids() ([]int32, error) {
 	if err != nil {
 		return []int32{}, err
 	}
-	return p.uids, nil
+	return p.Puids, nil
 }
 
 // Gids returns group ids of the process as a slice of the int
@@ -171,7 +194,7 @@ func (p *Process) Gids() ([]int32, error) {
 	if err != nil {
 		return []int32{}, err
 	}
-	return p.gids, nil
+	return p.Pgids, nil
 }
 
 // Terminal returns a terminal which is associated with the process.
@@ -230,11 +253,11 @@ func (p *Process) RlimitUsage(gatherUsed bool) ([]RlimitStat, error) {
 			}
 			rs.Used = uint64(times.User + times.System)
 		case RLIMIT_DATA:
-			rs.Used = uint64(p.memInfo.Data)
+			rs.Used = uint64(p.PmemInfo.Data)
 		case RLIMIT_STACK:
-			rs.Used = uint64(p.memInfo.Stack)
+			rs.Used = uint64(p.PmemInfo.Stack)
 		case RLIMIT_RSS:
-			rs.Used = uint64(p.memInfo.RSS)
+			rs.Used = uint64(p.PmemInfo.RSS)
 		case RLIMIT_NOFILE:
 			n, err := p.NumFDs()
 			if err != nil {
@@ -242,13 +265,13 @@ func (p *Process) RlimitUsage(gatherUsed bool) ([]RlimitStat, error) {
 			}
 			rs.Used = uint64(n)
 		case RLIMIT_MEMLOCK:
-			rs.Used = uint64(p.memInfo.Locked)
+			rs.Used = uint64(p.PmemInfo.Locked)
 		case RLIMIT_AS:
-			rs.Used = uint64(p.memInfo.VMS)
+			rs.Used = uint64(p.PmemInfo.VMS)
 		case RLIMIT_LOCKS:
 			//TODO we can get the used value from /proc/$pid/locks. But linux doesn't enforce it, so not a high priority.
 		case RLIMIT_SIGPENDING:
-			rs.Used = p.sigInfo.PendingProcess
+			rs.Used = p.PsigInfo.PendingProcess
 		case RLIMIT_NICE:
 			// The rlimit for nice is a little unusual, in that 0 means the niceness cannot be decreased beyond the current value, but it can be increased.
 			// So effectively: if rs.Soft == 0 { rs.Soft = rs.Used }
@@ -272,7 +295,7 @@ func (p *Process) NumCtxSwitches() (*NumCtxSwitchesStat, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.numCtxSwitches, nil
+	return p.PnumCtxSwitches, nil
 }
 
 // NumFDs returns the number of File Descriptors used by the process.
@@ -287,7 +310,7 @@ func (p *Process) NumThreads() (int32, error) {
 	if err != nil {
 		return 0, err
 	}
-	return p.numThreads, nil
+	return p.PnumThreads, nil
 }
 
 func (p *Process) Threads() (map[int32]*cpu.TimesStat, error) {
@@ -535,7 +558,7 @@ func (p *Process) fillFromLimits() ([]RlimitStat, error) {
 		// Remove last item from string
 		str = str[:len(str)-1]
 
-		//The rest is a stats name
+		//The rest is a stats Pname
 		resourceName := strings.Join(str, " ")
 		switch resourceName {
 		case "Max cpu time":
@@ -788,9 +811,9 @@ func (p *Process) fillFromStatus() error {
 		return err
 	}
 	lines := strings.Split(string(contents), "\n")
-	p.numCtxSwitches = &NumCtxSwitchesStat{}
-	p.memInfo = &MemoryInfoStat{}
-	p.sigInfo = &SignalInfoStat{}
+	p.PnumCtxSwitches = &NumCtxSwitchesStat{}
+	p.PmemInfo = &MemoryInfoStat{}
+	p.PsigInfo = &SignalInfoStat{}
 	for _, line := range lines {
 		tabParts := strings.SplitN(line, "\t", 2)
 		if len(tabParts) < 2 {
@@ -799,135 +822,135 @@ func (p *Process) fillFromStatus() error {
 		value := tabParts[1]
 		switch strings.TrimRight(tabParts[0], ":") {
 		case "Name":
-			p.name = strings.Trim(value, " \t")
-			if len(p.name) >= 15 {
+			p.Pname = strings.Trim(value, " \t")
+			if len(p.Pname) >= 15 {
 				cmdlineSlice, err := p.CmdlineSlice()
 				if err != nil {
 					return err
 				}
 				if len(cmdlineSlice) > 0 {
 					extendedName := filepath.Base(cmdlineSlice[0])
-					if strings.HasPrefix(extendedName, p.name) {
-						p.name = extendedName
+					if strings.HasPrefix(extendedName, p.Pname) {
+						p.Pname = extendedName
 					}
 				}
 			}
 		case "State":
-			p.status = value[0:1]
+			p.Pstatus = value[0:1]
 		case "PPid", "Ppid":
 			pval, err := strconv.ParseInt(value, 10, 32)
 			if err != nil {
 				return err
 			}
-			p.parent = int32(pval)
+			p.Pparent = int32(pval)
 		case "Uid":
-			p.uids = make([]int32, 0, 4)
+			p.Puids = make([]int32, 0, 4)
 			for _, i := range strings.Split(value, "\t") {
 				v, err := strconv.ParseInt(i, 10, 32)
 				if err != nil {
 					return err
 				}
-				p.uids = append(p.uids, int32(v))
+				p.Puids = append(p.Puids, int32(v))
 			}
 		case "Gid":
-			p.gids = make([]int32, 0, 4)
+			p.Pgids = make([]int32, 0, 4)
 			for _, i := range strings.Split(value, "\t") {
 				v, err := strconv.ParseInt(i, 10, 32)
 				if err != nil {
 					return err
 				}
-				p.gids = append(p.gids, int32(v))
+				p.Pgids = append(p.Pgids, int32(v))
 			}
 		case "Threads":
 			v, err := strconv.ParseInt(value, 10, 32)
 			if err != nil {
 				return err
 			}
-			p.numThreads = int32(v)
+			p.PnumThreads = int32(v)
 		case "voluntary_ctxt_switches":
 			v, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
 				return err
 			}
-			p.numCtxSwitches.Voluntary = v
+			p.PnumCtxSwitches.Voluntary = v
 		case "nonvoluntary_ctxt_switches":
 			v, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
 				return err
 			}
-			p.numCtxSwitches.Involuntary = v
+			p.PnumCtxSwitches.Involuntary = v
 		case "VmRSS":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
 				return err
 			}
-			p.memInfo.RSS = v * 1024
+			p.PmemInfo.RSS = v * 1024
 		case "VmSize":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
 				return err
 			}
-			p.memInfo.VMS = v * 1024
+			p.PmemInfo.VMS = v * 1024
 		case "VmSwap":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
 				return err
 			}
-			p.memInfo.Swap = v * 1024
+			p.PmemInfo.Swap = v * 1024
 		case "VmData":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
 				return err
 			}
-			p.memInfo.Data = v * 1024
+			p.PmemInfo.Data = v * 1024
 		case "VmStk":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
 				return err
 			}
-			p.memInfo.Stack = v * 1024
+			p.PmemInfo.Stack = v * 1024
 		case "VmLck":
 			value := strings.Trim(value, " kB") // remove last "kB"
 			v, err := strconv.ParseUint(value, 10, 64)
 			if err != nil {
 				return err
 			}
-			p.memInfo.Locked = v * 1024
+			p.PmemInfo.Locked = v * 1024
 		case "SigPnd":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
 				return err
 			}
-			p.sigInfo.PendingThread = v
+			p.PsigInfo.PendingThread = v
 		case "ShdPnd":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
 				return err
 			}
-			p.sigInfo.PendingProcess = v
+			p.PsigInfo.PendingProcess = v
 		case "SigBlk":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
 				return err
 			}
-			p.sigInfo.Blocked = v
+			p.PsigInfo.Blocked = v
 		case "SigIgn":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
 				return err
 			}
-			p.sigInfo.Ignored = v
+			p.PsigInfo.Ignored = v
 		case "SigCgt":
 			v, err := strconv.ParseUint(value, 16, 64)
 			if err != nil {
 				return err
 			}
-			p.sigInfo.Caught = v
+			p.PsigInfo.Caught = v
 		}
 
 	}
@@ -1054,7 +1077,7 @@ func readPidsFromDir(path string) ([]int32, error) {
 	for _, fname := range fnames {
 		pid, err := strconv.ParseInt(fname, 10, 32)
 		if err != nil {
-			// if not numeric name, just skip
+			// if not numeric Pname, just skip
 			continue
 		}
 		ret = append(ret, int32(pid))
